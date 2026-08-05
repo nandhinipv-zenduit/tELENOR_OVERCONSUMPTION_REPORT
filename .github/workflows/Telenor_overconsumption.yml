@@ -6,7 +6,7 @@ on:
   schedule:
     # 06:00 UTC on the 1st of every month. Adjust to taste — cron is UTC,
     # so shift for your local time zone if it matters.
-    - cron: "0 6 1 * *"
+    - cron: "0 10 * * *"
   workflow_dispatch: {}
 
 jobs:
