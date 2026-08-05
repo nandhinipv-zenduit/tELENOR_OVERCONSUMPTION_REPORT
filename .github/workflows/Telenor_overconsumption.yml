@@ -48,4 +48,4 @@ jobs:
           ZOHO_ANALYTICS_DOMAIN: ${{ secrets.ZOHO_ANALYTICS_DOMAIN }}
           ZOHO_ACCOUNTS_DOMAIN: ${{ secrets.ZOHO_ACCOUNTS_DOMAIN }}
           ZOHO_ANALYTICS_EXPORT_TIMEOUT_SECONDS: ${{ secrets.ZOHO_ANALYTICS_EXPORT_TIMEOUT_SECONDS }}
-        run: python telenor_sim_report.py
+        run: python main.py
