@@ -56,7 +56,8 @@ SMTP_PORT = 587
 EMAIL_SENDER = os.getenv("GMAIL_USERNAME")
 EMAIL_PASSWORD = os.getenv("GMAIL_PASS")
 EMAIL_TO = [
-    "nandhinipv@zenduit.com","abidali@gofleet.com","nikithavinod@zenduit.com","rizamae@gofleet.com"
+    "nandhinipv@zenduit.com", "nikithavinod@zenduit.com", "abidali@gofleet.com",
+    "adrianarosas@zenduit.com", "vanibukelia@zenduit.com", "rizamae@gofleet.com",
 ]
 if not EMAIL_SENDER or not EMAIL_PASSWORD:
     raise RuntimeError("❌ Gmail credentials not found in environment variables")
@@ -85,7 +86,7 @@ if not AERIS["username"] or not AERIS["password"]:
 # "company==01001566"). Two candidates showed up during discovery —
 # "01001566" (from the Service Portal URL) and "01001155" (referenced in
 # custom role names). Override via env var if the default is wrong.
-COMPANY_QUERY = os.getenv("TELENOR_COMPANY_QUERY", "01001566")
+COMPANY_QUERY = os.getenv("TELENOR_COMPANY_QUERY") or "01001566"
 
 PAGE_LIMIT = 10000  # Subscription Search API's documented max for `limit`
 USAGE_CONCURRENCY = 4  # concurrent day-fetches against the usage report API
