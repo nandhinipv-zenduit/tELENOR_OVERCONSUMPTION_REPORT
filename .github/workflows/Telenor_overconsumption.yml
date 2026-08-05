@@ -55,4 +55,4 @@ jobs:
           # the script has working defaults for all of them. Add any of them
           # back here (with a matching secret) only if you ever need to
           # override one.
-        run: python telenor_sim_report.py
+        run: python main.py
