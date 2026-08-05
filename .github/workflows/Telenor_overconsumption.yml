@@ -1,12 +1,17 @@
 name: Telenor SIM Usage Audit
 
-# Runs the Telenor overconsumption report on a monthly schedule, and lets
-# you trigger it on demand from the Actions tab for testing.
+# Runs the Telenor overconsumption report daily, and lets you trigger it
+# on demand from the Actions tab for testing.
 on:
   schedule:
-    # 06:00 UTC on the 1st of every month. Adjust to taste — cron is UTC,
-    # so shift for your local time zone if it matters.
-    - cron: "0 10 * * *"
+    # 10:00 AM EST (UTC-5) = 15:00 UTC, every day.
+    # NOTE: GitHub Actions cron is always UTC and does not observe DST, so
+    # during Eastern Daylight Time (UTC-4, roughly Mar-Nov) this fires at
+    # 11:00 AM Eastern clock time instead of 10:00 AM. If you need it pinned
+    # to 10:00 AM Eastern year-round, swap this single line for two cron
+    # entries (one at "0 15 * * *" for EST months, one at "0 14 * * *" for
+    # EDT months) — say the word and I'll wire that up.
+    - cron: "0 15 * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -43,9 +48,9 @@ jobs:
           ZOHO_CLIENT_ID_ANALYTICS: ${{ secrets.ZOHO_CLIENT_ID_ANALYTICS }}
           ZOHO_CLIENT_SECRET_ANALYTICS: ${{ secrets.ZOHO_CLIENT_SECRET_ANALYTICS }}
           ZOHO_CLIENT_REFRESH_TOKEN_ANALYTICS: ${{ secrets.ZOHO_CLIENT_REFRESH_TOKEN_ANALYTICS }}
-          # Optional overrides — the script has defaults for all of these.
-          ZOHO_ORG_ID: ${{ secrets.ZOHO_ORG_ID }}
-          ZOHO_ANALYTICS_DOMAIN: ${{ secrets.ZOHO_ANALYTICS_DOMAIN }}
-          ZOHO_ACCOUNTS_DOMAIN: ${{ secrets.ZOHO_ACCOUNTS_DOMAIN }}
-          ZOHO_ANALYTICS_EXPORT_TIMEOUT_SECONDS: ${{ secrets.ZOHO_ANALYTICS_EXPORT_TIMEOUT_SECONDS }}
+          # ZOHO_ORG_ID, ZOHO_ANALYTICS_DOMAIN, ZOHO_ACCOUNTS_DOMAIN, and
+          # ZOHO_ANALYTICS_EXPORT_TIMEOUT_SECONDS are intentionally omitted —
+          # the script has working defaults for all of them. Add any of them
+          # back here (with a matching secret) only if you ever need to
+          # override one.
         run: python main.py
