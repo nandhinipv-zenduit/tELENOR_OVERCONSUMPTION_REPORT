@@ -41,8 +41,10 @@ jobs:
           # Telenor / Aeris (Service Portal login)
           TELENOR_USERNAME: ${{ secrets.TELENOR_USERNAME }}
           TELENOR_PASSWORD: ${{ secrets.TELENOR_PASSWORD }}
-          # Optional override — defaults to "01001566" in the script if unset.
-          TELENOR_COMPANY_QUERY: ${{ secrets.TELENOR_COMPANY_QUERY }}
+          # TELENOR_COMPANY_QUERY is intentionally omitted — the script
+          # falls back to "01001566" when it's unset. Only add this line
+          # (with a matching secret) if that default is ever wrong for
+          # your account.
 
           # Zoho Analytics (Zenduit device / account data)
           ZOHO_CLIENT_ID_ANALYTICS: ${{ secrets.ZOHO_CLIENT_ID_ANALYTICS }}
@@ -53,4 +55,4 @@ jobs:
           # the script has working defaults for all of them. Add any of them
           # back here (with a matching secret) only if you ever need to
           # override one.
-        run: python main.py
+        run: python telenor_sim_report.py
