@@ -14,7 +14,7 @@ from urllib.parse import quote
 from aiohttp import ClientTimeout
 from yarl import URL
 from tqdm.asyncio import tqdm_asyncio
-import smtplib
+import base64
 from email.message import EmailMessage
 from io import BytesIO
 
@@ -49,18 +49,37 @@ from io import BytesIO
 # ==========================================================
 
 # ==========================================================
-# GMAIL CONFIG (GLOBAL) — identical to the 1NCE script.
+# GMAIL CONFIG (GLOBAL) — OAuth2 via the Gmail REST API, not an app
+# password. Same client/refresh token as the 1NCE/FloLive/Monogoto repos
+# (gmail.send scope) — reuse those secret values here, no new token needed.
 # ==========================================================
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token"
+
 EMAIL_SENDER = os.getenv("GMAIL_USERNAME")
-EMAIL_PASSWORD = os.getenv("GMAIL_PASS")
+GMAIL_CLIENT_ID = os.getenv("GMAIL_CLIENT_ID")
+GMAIL_CLIENT_SECRET = os.getenv("GMAIL_CLIENT_SECRET")
+GMAIL_REFRESH_TOKEN = os.getenv("GMAIL_REFRESH_TOKEN")
+
 EMAIL_TO = [
     "nandhinipv@zenduit.com", "nikithavinod@zenduit.com", "abidali@gofleet.com",
     "amaansardar@zenduit.com","yaseenshafiq@gofleet.com", "rizamae@gofleet.com",
 ]
-if not EMAIL_SENDER or not EMAIL_PASSWORD:
-    raise RuntimeError("❌ Gmail credentials not found in environment variables")
+
+_missing_gmail = [
+    name for name, value in (
+        ("GMAIL_USERNAME", EMAIL_SENDER),
+        ("GMAIL_CLIENT_ID", GMAIL_CLIENT_ID),
+        ("GMAIL_CLIENT_SECRET", GMAIL_CLIENT_SECRET),
+        ("GMAIL_REFRESH_TOKEN", GMAIL_REFRESH_TOKEN),
+    ) if not value
+]
+if _missing_gmail:
+    raise RuntimeError(
+        f"❌ Gmail OAuth credentials not found in environment variables: {_missing_gmail}. "
+        f"This script no longer uses GMAIL_PASS (app password) — reuse the same "
+        f"GMAIL_CLIENT_ID/GMAIL_CLIENT_SECRET/GMAIL_REFRESH_TOKEN secret values already "
+        f"set up for the 1NCE/FloLive/Monogoto repos."
+    )
 
 # ==========================================================
 # TELENOR / AERIS CONFIG
@@ -684,7 +703,32 @@ def fetch_account_name_lookup(token):
 
 
 # ==========================================================
-# EMAIL — same shape as the 1NCE script's send_email().
+# GMAIL OAUTH2 — mint a short-lived access token from the client
+# id/secret/refresh token, then call the Gmail REST API directly.
+# ==========================================================
+def get_gmail_access_token():
+    """Exchange the long-lived refresh token for a short-lived Gmail access token."""
+    r = requests.post(
+        GMAIL_TOKEN_URL,
+        data={
+            "client_id": GMAIL_CLIENT_ID,
+            "client_secret": GMAIL_CLIENT_SECRET,
+            "refresh_token": GMAIL_REFRESH_TOKEN,
+            "grant_type": "refresh_token",
+        },
+        timeout=30,
+    )
+    data = r.json()
+    if r.status_code != 200 or "access_token" not in data:
+        raise RuntimeError(
+            f"Gmail OAuth failed | status={r.status_code} | response={data}"
+        )
+    return data["access_token"]
+
+
+# ==========================================================
+# EMAIL — same shape as the 1NCE/FloLive/Monogoto scripts' send_email():
+# build the MIME message, then POST it to the Gmail API.
 # ==========================================================
 def send_email(overconsumption_count, unmapped_count, excel_buffer):
     msg = EmailMessage()
@@ -709,11 +753,18 @@ Nandhiv
         subtype="vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         filename="telenor_overconsumption_report.xlsx",
     )
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.send_message(msg)
-    print("📧 Email sent (Excel attached from memory)")
+
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("ascii")
+    access_token = get_gmail_access_token()
+    r = requests.post(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"},
+        json={"raw": raw},
+        timeout=120,
+    )
+    if r.status_code != 200:
+        raise RuntimeError(f"Gmail send failed | status={r.status_code} | response={r.text}")
+    print(f"📧 Email sent via Gmail API (message id: {r.json().get('id')})")
 
 
 # ==========================================================
