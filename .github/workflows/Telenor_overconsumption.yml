@@ -34,9 +34,17 @@ jobs:
 
       - name: Run Telenor SIM report
         env:
-          # Gmail (delivery)
+          # Gmail (delivery) — OAuth2 via the Gmail API, not GMAIL_PASS.
+          # Same client/refresh token already set up for the 1NCE/FloLive/
+          # Monogoto repos (gmail.send scope) — reuse those secret values
+          # here, no need to mint a new token.
           GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          # GMAIL_PASS is no longer read — delete that secret once this
+          # workflow runs green, so nobody is misled into "fixing" the app
+          # password later.
 
           # Telenor / Aeris (Service Portal login)
           TELENOR_USERNAME: ${{ secrets.TELENOR_USERNAME }}
